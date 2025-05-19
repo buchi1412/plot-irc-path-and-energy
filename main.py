@@ -1,12 +1,46 @@
 from pathlib import Path
+import tomllib
 from statistics import mean
 
 import numpy as np
 import pandas as pd
 
 
-def make_coord_list_collection_for_plot(csv_list: list, column: int):
-    coord_list_collection = []
+def imput_toml_read(input_toml: Path) -> dict:
+    with open(input_toml, "rb") as f:
+        input_data = tomllib.load(f)
+
+    return input_data
+
+
+def make_irc_csv_path_obj_dict_for_ptsb(irc_csv_path_dict: dict) -> dict:
+    irc_csv_path_obj_dict = {}
+
+    for key in irc_csv_path_dict:
+        irc_csv_path_obj_dict[key]["ts1"] = Path(f"{irc_csv_path_dict[key]}/ts1").glob(
+            "*.csv"
+        )
+        irc_csv_path_obj_dict[key]["ts2"] = Path(f"{irc_csv_path_dict[key]}/ts2").glob(
+            "*.csv"
+        )
+
+    return irc_csv_path_obj_dict
+
+
+def make_coord_list_collection_dict_for_plot(csv_path_obj_dict: dict):
+    coord_list_collection_dict = {}
+
+    for key in dict:
+        coord_list_collection_dict[key] = []
+
+        for csv_path_obj in csv_path_obj_dict[key]:
+            df = pd.DataFrame(csv_path_obj)
+            csv_name = csv_path_obj_dict.stem
+            coord_list_collection_dict[key][csv_name] = []
+
+            for column in df.columns.values:
+                coord_list_collection_dict[column][csv_name][].append([])
+
 
     for i in range(len(csv_list)):
         coord_list_collection.append([])
@@ -19,6 +53,8 @@ def make_coord_list_collection_for_plot(csv_list: list, column: int):
 
     return coord_list_collection
 
+
+def exclude_ircs_eith_high_energy_ts():
 
 def unit_conversion_for_energy_list_collection(energy_list_collection: list, unit: str):
     def unit_conversion_for_energy_list(energy_list: list, unit: str):
@@ -145,34 +181,31 @@ def plot_irc_of_previous_and_one_wn(
 
 
 def main():
-    # Input section
-    save_path = "./irc_plot_of_previous_and_one_wn"
-    plot_type1 = "plot_irc_path_via_two_bonds"
-    plot_type2 = "plot_irc_energy_along_reaction_path_length"
-    gas_irc_data_csv_collection_path = "./gas/gas_irc_data_csv_collection"
-    pcm_irc_data_csv_collection_path = "./pcm/pcm_irc_data_csv_collection"
-    w45_irc_data_csv_collection_path = "./w45/new_w45_irc_data_csv_collection_path"
-    ncollect = 20
+    # 1. Input section
 
-    # Data processing
-    gas_ts1_csv_list = list(
-        Path(f"{gas_irc_data_csv_collection_path}/ts1").glob("*.csv")
-    )
-    gas_ts2_csv_list = list(
-        Path(f"{gas_irc_data_csv_collection_path}/ts2").glob("*.csv")
-    )
-    pcm_ts1_csv_list = list(
-        Path(f"{pcm_irc_data_csv_collection_path}/ts1").glob("*.csv")
-    )
-    pcm_ts2_csv_list = list(
-        Path(f"{pcm_irc_data_csv_collection_path}/ts2").glob("*.csv")
-    )
-    w45_ts1_csv_list = list(
-        Path(f"{pcm_irc_data_csv_collection_path}/ts1").glob("*.csv")
-    )
-    w45_ts2_csv_list = list(
-        Path(f"{pcm_irc_data_csv_collection_path}/ts2").glob("*.csv")
-    )
+    # 1.1. Read input
+    input_file = Path("./input.toml")
+    input_data = imput_toml_read(input_toml=input_file)
+    
+    # 1.2. General input
+    save_path = input_data["general"]["save_path"]
+    ncollect = input_data["general"]["ncollect"]
+
+    # 1.3. CSV collection path input
+    irc_data_csv_collection_path_dict = input_data["csv_collection_path"]
+
+
+    # 2. Data processing section
+
+    # 2.1. Make IRC data csv path object dictionary
+    irc_data_csv_path_obj_dict = make_irc_csv_path_obj_dict_for_ptsb(irc_csv_path_dict=irc_data_csv_collection_path_dict)
+
+    # 2.2.
+
+    # 2.3. Collect IRCs with low-energy transition states
+
+
+
 
     gas_ts1_r1 = make_coord_list_collection_for_plot(
         csv_list=gas_ts1_csv_list, column=0
@@ -369,6 +402,7 @@ def main():
         data_list_collection=w45_ts2_r2, energy_list_collection=w45_ts2_energy
     )
 
+# 3. Plot section
 
 if __name__ == "__main__":
     main()
