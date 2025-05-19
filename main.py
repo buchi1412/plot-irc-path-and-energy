@@ -1,9 +1,8 @@
 from pathlib import Path
-import tomllib
 from statistics import mean
 
-import numpy as np
 import pandas as pd
+import tomllib
 
 
 def imput_toml_read(input_toml: Path) -> dict:
@@ -27,34 +26,35 @@ def make_irc_csv_path_obj_dict_for_ptsb(irc_csv_path_dict: dict) -> dict:
     return irc_csv_path_obj_dict
 
 
-def make_coord_list_collection_dict_for_plot(csv_path_obj_dict: dict):
-    coord_list_collection_dict = {}
+def make_coord_dict_for_ptsb(csv_path_obj_dict: dict):
+    coord_dict = {}
 
-    for key in dict:
-        coord_list_collection_dict[key] = []
+    for key in csv_path_obj_dict:
+        coord_dict[key] = {}
 
-        for csv_path_obj in csv_path_obj_dict[key]:
-            df = pd.DataFrame(csv_path_obj)
-            csv_name = csv_path_obj_dict.stem
-            coord_list_collection_dict[key][csv_name] = []
+        for ts_type in csv_path_obj_dict[key]:
+            coord_dict[key][ts_type] = {}
 
-            for column in df.columns.values:
-                coord_list_collection_dict[column][csv_name][].append([])
+            for csv_path_obj in csv_path_obj_dict[key]:
+                df = pd.read_csv(csv_path_obj)
+                csv_stem = csv_path_obj.stem
+
+                for column in df.columns.values:
+                    if column not in coord_dict[key]:
+                        coord_dict[key][ts_type][column] = {}
+
+                    coord_dict[key][ts_type][column][csv_stem] = df[column].tolist()
+
+        return coord_dict
 
 
-    for i in range(len(csv_list)):
-        coord_list_collection.append([])
-
-        irc_data_list = np.loadtxt(
-            csv_list[i], skiprows=1, delimiter=",", encoding="UTF8"
-        )
-
-        coord_list_collection[i] = irc_data_list[:, column].tolist()
-
-    return coord_list_collection
+def crassify_ircs_by_product():
+    pass
 
 
 def exclude_ircs_eith_high_energy_ts():
+    pass
+
 
 def unit_conversion_for_energy_list_collection(energy_list_collection: list, unit: str):
     def unit_conversion_for_energy_list(energy_list: list, unit: str):
@@ -186,7 +186,7 @@ def main():
     # 1.1. Read input
     input_file = Path("./input.toml")
     input_data = imput_toml_read(input_toml=input_file)
-    
+
     # 1.2. General input
     save_path = input_data["general"]["save_path"]
     ncollect = input_data["general"]["ncollect"]
@@ -194,96 +194,25 @@ def main():
     # 1.3. CSV collection path input
     irc_data_csv_collection_path_dict = input_data["csv_collection_path"]
 
+    # 1.4. Color input
+    plot_color_dict = input_data["plot_color"]
+
+    # 1.5. Classification option input
+    classification_option_dict = input_data["classification_option"]
 
     # 2. Data processing section
 
     # 2.1. Make IRC data csv path object dictionary
-    irc_data_csv_path_obj_dict = make_irc_csv_path_obj_dict_for_ptsb(irc_csv_path_dict=irc_data_csv_collection_path_dict)
-
-    # 2.2.
-
-    # 2.3. Collect IRCs with low-energy transition states
-
-
-
-
-    gas_ts1_r1 = make_coord_list_collection_for_plot(
-        csv_list=gas_ts1_csv_list, column=0
-    )
-    gas_ts1_r2 = make_coord_list_collection_for_plot(
-        csv_list=gas_ts1_csv_list, column=1
-    )
-    gas_ts1_energy = make_coord_list_collection_for_plot(
-        csv_list=gas_ts1_csv_list, column=2
-    )
-    gas_ts1_reaction_path_length = make_coord_list_collection_for_plot(
-        csv_list=gas_ts1_csv_list, column=3
+    irc_data_csv_path_obj_dict = make_irc_csv_path_obj_dict_for_ptsb(
+        irc_csv_path_dict=irc_data_csv_collection_path_dict
     )
 
-    gas_ts2_r1 = make_coord_list_collection_for_plot(
-        csv_list=gas_ts2_csv_list, column=0
-    )
-    gas_ts2_r2 = make_coord_list_collection_for_plot(
-        csv_list=gas_ts2_csv_list, column=1
-    )
-    gas_ts2_energy = make_coord_list_collection_for_plot(
-        csv_list=gas_ts2_csv_list, column=2
-    )
-    gas_ts2_reaction_path_length = make_coord_list_collection_for_plot(
-        csv_list=gas_ts2_csv_list, column=3
-    )
+    # 2.2. Make coord list
+    coord_dict = make_coord_dict_for_ptsb(csv_path_obj_dict=irc_data_csv_path_obj_dict)
 
-    pcm_ts1_r1 = make_coord_list_collection_for_plot(
-        csv_list=pcm_ts1_csv_list, column=0
-    )
-    pcm_ts1_r2 = make_coord_list_collection_for_plot(
-        csv_list=pcm_ts1_csv_list, column=1
-    )
-    pcm_ts1_energy = make_coord_list_collection_for_plot(
-        csv_list=pcm_ts1_csv_list, column=2
-    )
-    pcm_ts1_reaction_path_length = make_coord_list_collection_for_plot(
-        csv_list=pcm_ts1_csv_list, column=3
-    )
+    # 2.3. Classify IRCs by product
 
-    pcm_ts2_r1 = make_coord_list_collection_for_plot(
-        csv_list=pcm_ts2_csv_list, column=0
-    )
-    pcm_ts2_r2 = make_coord_list_collection_for_plot(
-        csv_list=pcm_ts2_csv_list, column=1
-    )
-    pcm_ts2_energy = make_coord_list_collection_for_plot(
-        csv_list=pcm_ts2_csv_list, column=2
-    )
-    pcm_ts2_reaction_path_length = make_coord_list_collection_for_plot(
-        csv_list=pcm_ts2_csv_list, column=3
-    )
-
-    w45_ts1_r1 = make_coord_list_collection_for_plot(
-        csv_list=w45_ts1_csv_list, column=0
-    )
-    w45_ts1_r2 = make_coord_list_collection_for_plot(
-        csv_list=w45_ts1_csv_list, column=1
-    )
-    w45_ts1_energy = make_coord_list_collection_for_plot(
-        csv_list=w45_ts1_csv_list, column=2
-    )
-    w45_ts1_reaction_path_length = make_coord_list_collection_for_plot(
-        csv_list=w45_ts1_csv_list, column=3
-    )
-
-    w45_ts2_r1 = make_coord_list_collection_for_plot(
-        csv_list=w45_ts2_csv_list, column=0
-    )
-    w45_ts2_r2 = make_coord_list_collection_for_plot(
-        csv_list=w45_ts2_csv_list, column=1
-    )
-    w45_ts2_energy = make_coord_list_collection_for_plot(
-        csv_list=w45_ts2_csv_list, column=2
-    )
-    w45_ts2_reaction_path_length = make_coord_list_collection_for_plot(
-        csv_list=w45_ts2_csv_list, column=3
-    )
+    # 2.4. Collect IRCs with low-energy transition states
 
     gas_ts1_energy = unit_conversion_for_energy_list_collection(
         energy_list_collection=gas_ts1_energy, unit="kcal_per_mol"
@@ -401,6 +330,7 @@ def main():
     w45_ts2_ts_r2 = make_ts_data_list(
         data_list_collection=w45_ts2_r2, energy_list_collection=w45_ts2_energy
     )
+
 
 # 3. Plot section
 
