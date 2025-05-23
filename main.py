@@ -1,8 +1,9 @@
+import copy
+import tomllib
 from pathlib import Path
 from statistics import mean
 
 import pandas as pd
-import tomllib
 
 
 def imput_toml_read(input_toml: Path) -> dict:
@@ -26,30 +27,82 @@ def make_irc_csv_path_obj_dict_for_ptsb(irc_csv_path_dict: dict) -> dict:
     return irc_csv_path_obj_dict
 
 
-def make_coord_dict_for_ptsb(csv_path_obj_dict: dict):
-    coord_dict = {}
+def make_irc_data_dict_for_ptsb(irc_csv_path_obj_dict: dict):
+    irc_data_dict = {}
 
-    for key in csv_path_obj_dict:
-        coord_dict[key] = {}
+    for key in irc_csv_path_obj_dict:
+        irc_data_dict[key] = {}
 
-        for ts_type in csv_path_obj_dict[key]:
-            coord_dict[key][ts_type] = {}
+        for ts_type in irc_csv_path_obj_dict[key]:
+            irc_data_dict[key][ts_type] = {}
 
-            for csv_path_obj in csv_path_obj_dict[key]:
-                df = pd.read_csv(csv_path_obj)
-                csv_stem = csv_path_obj.stem
+            for irc_csv_path_obj in irc_csv_path_obj_dict[key]:
+                irc_data_df = pd.read_csv(irc_csv_path_obj)
+                csv_stem = irc_csv_path_obj.stem
 
-                for column in df.columns.values:
-                    if column not in coord_dict[key]:
-                        coord_dict[key][ts_type][column] = {}
+                for column in irc_data_df.columns.values:
+                    if column not in irc_data_dict[key]:
+                        irc_data_dict[key][ts_type][column] = {}
 
-                    coord_dict[key][ts_type][column][csv_stem] = df[column].tolist()
+                    irc_data_dict[key][ts_type][column][csv_stem] = irc_data_df[
+                        column
+                    ].tolist()
 
-        return coord_dict
+        return irc_data_dict
 
 
-def crassify_ircs_by_product():
-    pass
+def classify_ircs_by_product_for_ptsb(
+    irc_data_dict: dict, classification_option_dict: dict
+) -> dict:
+    classified_irc_data_dict = {}
+
+    for key in irc_data_dict:
+        if classification_option_dict["general"][key]:
+            classified_irc_data_dict[key] = copy.deepcopy(irc_data_dict)
+
+        else:
+            classified_irc_data_dict[key] = {}
+
+            for ts_type in irc_data_dict[key]:
+                if classification_option_dict["ts_type"][ts_type]:
+                    classified_irc_data_dict[key][ts_type] = copy.deepcopy(
+                        irc_data_dict[key][ts_type]
+                    )
+
+                else:
+                    classified_irc_data_dict[key][ts_type] = {}
+
+                    for prod_type in classification_option_dict[
+                        "prod_judge_param"
+                    ].values():
+                        classified_irc_data_dict[key][ts_type][prod_type] = {}
+
+                    for prod_type in classified_irc_data_dict[key][ts_type]:
+                        prod_judge_param_name = classification_option_dict[
+                            "prod_judge_param_name"
+                        ][prod_type]
+                        prod_judge_criterion = classification_option_dict[
+                            "prod_judge_criteria"
+                        ][prod_judge_param_name]
+
+                        target_csv_stem_list = []
+
+                        for csv_stem, prod_judge_param_list in irc_data_dict[key][
+                            ts_type
+                        ][prod_judge_param_name].items():
+                            prod_judge_param = prod_judge_param_list[-1]
+
+                            if prod_judge_param < prod_judge_criterion:
+                                target_csv_stem_list.append(csv_stem)
+
+                        for param_name, param_dict in irc_data_dict[key][
+                            ts_type
+                        ].items():
+                            classified_irc_data_dict[key][ts_type][prod_type][
+                                param_name
+                            ] = {csv_stem: param_dict[csv_stem] in target_csv_stem_list}
+
+    return classified_irc_data_dict
 
 
 def exclude_ircs_eith_high_energy_ts():
@@ -207,10 +260,16 @@ def main():
         irc_csv_path_dict=irc_data_csv_collection_path_dict
     )
 
-    # 2.2. Make coord list
-    coord_dict = make_coord_dict_for_ptsb(csv_path_obj_dict=irc_data_csv_path_obj_dict)
+    # 2.2. Make IRC data dict
+    irc_data_dict = make_irc_data_dict_for_ptsb(
+        csv_path_obj_dict=irc_data_csv_path_obj_dict
+    )
 
     # 2.3. Classify IRCs by product
+    classified_irc_data_dict = classify_ircs_by_product_for_ptsb(
+        irc_data_dict=irc_data_dict,
+        classification_option_dict=classification_option_dict,
+    )
 
     # 2.4. Collect IRCs with low-energy transition states
 
